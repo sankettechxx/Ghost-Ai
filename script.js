@@ -1,110 +1,116 @@
+// ==================== CONFIG ====================
 const BACKEND_URL = 'https://ai-api-1-ycot.onrender.com';
-let currentChatId = Date.now();
-const chats = {};
+let currentChatId = Date.now().toString();
+let chats = JSON.parse(localStorage.getItem('chats')) || {};
 
+// ==================== DOM ELEMENTS ====================
 const chatBox = document.getElementById('chatBox');
 const promptInput = document.getElementById('promptInput');
-const chatHistoryEl = document.getElementById('chatHistory');
+const sendBtn = document.getElementById('sendBtn');
+const chatHistory = document.getElementById('chatHistory');
+const modelBadge = document.getElementById('modelBadge');
 
-// Auto-resize textarea
-promptInput.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 180) + 'px';
-});
+// ==================== MODEL MAPPING ====================
+const modelMap = {
+    "smart": "llama-3.3-70b-versatile",
+    "fast": "llama-3.1-8b-instant",
+    "mixtral": "mixtral-8x7b-32768"
+};
 
-// Send message
+let currentModel = "smart";
+
+// ==================== FUNCTIONS ====================
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('active');
+}
+
+function toggleSettings() {
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+function saveSettings() {
+    currentModel = document.getElementById('modelSelect').value;
+    const temp = parseFloat(document.getElementById('tempValue').textContent);
+    
+    modelBadge.textContent = currentModel === 'smart' ? 
+        '🧠 Llama 3.3 70B' : currentModel === 'fast' ? 
+        '⚡ Llama 3.1 8B' : '🔮 Mixtral 8x7B';
+    
+    closeModal();
+}
+
 async function sendMessage() {
-    const message = promptInput.value.trim();
-    if (!message) return;
+    const prompt = promptInput.value.trim();
+    if (!prompt) return;
 
-    addMessage(message, 'user');
+    // Add user message
+    addMessage('user', prompt);
     promptInput.value = '';
-    promptInput.style.height = 'auto';
-
-    if (!chats[currentChatId]) chats[currentChatId] = [];
-    chats[currentChatId].push({ role: 'user', content: message });
-
-    showTypingIndicator();
+    
+    // Show typing indicator
+    const typingId = addTypingIndicator();
 
     try {
-        const model = document.getElementById('modelSelect')?.value || 'smart';
         const res = await fetch(BACKEND_URL + '/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: message, model: model })
+            body: JSON.stringify({ 
+                prompt: prompt,
+                model: modelMap[currentModel]
+            })
         });
 
         const data = await res.json();
-        removeTypingIndicator();
 
-        const botReply = data.success ? data.response : 'Error: ' + (data.error || 'Unknown');
-        chats[currentChatId].push({ role: 'assistant', content: botReply });
-        addMessage(botReply, 'bot', true);
-        saveToHistory();
-    } catch (err) {
-        removeTypingIndicator();
-        addMessage('❌ Connection error. Is backend running?', 'bot');
+        // Remove typing indicator
+        removeTypingIndicator(typingId);
+
+        if (data.success) {
+            addMessage('assistant', data.response);
+        } else {
+            addMessage('assistant', `❌ Error: ${data.error || 'Something went wrong'}`);
+        }
+
+    } catch (error) {
+        removeTypingIndicator(typingId);
+        addMessage('assistant', '❌ Connection error. Please try again.');
+        console.error(error);
     }
 }
 
-function addMessage(text, type, markdown = false) {
-    const msg = document.createElement('div');
-    msg.className = 'message ' + type;
+function addMessage(role, content) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${role}`;
     
-    const content = document.createElement('div');
-    content.className = 'msg-content';
-    
-    if (markdown && type === 'bot') {
-        content.innerHTML = marked.parse(text);
-        content.querySelectorAll('pre code').forEach(block => {
-            const btn = document.createElement('button');
-            btn.className = 'copy-btn';
-            btn.textContent = 'Copy';
-            btn.onclick = () => {
-                navigator.clipboard.writeText(block.textContent);
-                btn.textContent = 'Copied!';
-                setTimeout(() => btn.textContent = 'Copy', 2000);
-            };
-            block.parentElement.style.position = 'relative';
-            block.parentElement.appendChild(btn);
-        });
+    if (role === 'assistant') {
+        messageDiv.innerHTML = marked.parse(content);
     } else {
-        content.textContent = text;
+        messageDiv.textContent = content;
     }
     
-    msg.appendChild(content);
-    chatBox.appendChild(msg);
+    chatBox.appendChild(messageDiv);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-function showTypingIndicator() {
-    const typing = document.createElement('div');
-    typing.id = 'typing';
-    typing.className = 'message bot';
-    typing.innerHTML = '<div class="msg-content"><i>Ghost is thinking...</i></div>';
-    chatBox.appendChild(typing);
+function addTypingIndicator() {
+    const id = 'typing-' + Date.now();
+    const typingDiv = document.createElement('div');
+    typingDiv.id = id;
+    typingDiv.className = 'message assistant';
+    typingDiv.innerHTML = `<i>Thinking...</i>`;
+    chatBox.appendChild(typingDiv);
     chatBox.scrollTop = chatBox.scrollHeight;
+    return id;
 }
 
-function removeTypingIndicator() {
-    const typing = document.getElementById('typing');
-    if (typing) typing.remove();
-}
-
-function newChat() {
-    currentChatId = Date.now();
-    chatBox.innerHTML = `
-        <div class="welcome">
-            <h1>👻 Hello, I'm Ghost AI</h1>
-            <p>Powered by Groq · Free · Fast</p>
-            <div class="suggestions">
-                <div class="suggestion" onclick="quickAsk('Write a Python hello world')">🐍 Write Python code</div>
-                <div class="suggestion" onclick="quickAsk('Explain quantum computing')">🔮 Explain concepts</div>
-                <div class="suggestion" onclick="quickAsk('Tell me a joke')">😄 Tell a joke</div>
-            </div>
-        </div>
-    `;
-    saveToHistory();
+function removeTypingIndicator(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
 }
 
 function quickAsk(text) {
@@ -112,51 +118,42 @@ function quickAsk(text) {
     sendMessage();
 }
 
-function saveToHistory() {
-    chatHistoryEl.innerHTML = '';
-    Object.keys(chats).slice(-10).forEach(id => {
-        const item = document.createElement('div');
-        item.className = `history-item ${id === currentChatId ? 'active' : ''}`;
-        item.textContent = chats[id][0]?.content?.substring(0, 40) || 'New Chat';
-        item.onclick = () => loadChat(id);
-        chatHistoryEl.appendChild(item);
-    });
+function newChat() {
+    currentChatId = Date.now().toString();
+    chatBox.innerHTML = `
+        <div class="welcome">
+            <h1>👻 Hello, I'm Ghost AI</h1>
+            <p>Powered by Groq · Free · Fast</p>
+            <div class="suggestions">
+                <button class="suggestion" onclick="quickAsk('Write a Python hello world')">🐍 Write Python code</button>
+                <button class="suggestion" onclick="quickAsk('Explain quantum computing simply')">🔮 Explain concepts</button>
+                <button class="suggestion" onclick="quickAsk('Tell me a joke')">😄 Tell a joke</button>
+            </div>
+        </div>`;
 }
 
-function loadChat(id) {
-    currentChatId = id;
-    chatBox.innerHTML = '';
-    (chats[id] || []).forEach(msg => {
-        addMessage(msg.content, msg.role === 'user' ? 'user' : 'bot', msg.role === 'assistant');
-    });
-    saveToHistory();
-}
-
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-}
-
-function toggleSettings() {
-    document.getElementById('settingsModal').classList.toggle('show');
-}
-
-function closeModal() {
-    document.getElementById('settingsModal').classList.remove('show');
-}
-
-function saveSettings() {
-    const model = document.getElementById('modelSelect').value;
-    const badge = document.getElementById('modelBadge');
-    const names = { smart: '🧠 Llama 3.3 70B', fast: '⚡ Llama 3.1 8B', mixtral: '🔮 Mixtral 8x7B' };
-    badge.textContent = names[model] || '🧠 Llama 3.3 70B';
-    closeModal();
-}
-
-promptInput.addEventListener('keypress', e => {
+// Enter key support
+promptInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
     }
 });
 
-newChat();
+// Auto resize textarea
+promptInput.addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// Load chat history (basic)
+function loadChatHistory() {
+    // You can enhance this later
+    chatHistory.innerHTML = '<p style="color:#888; padding:10px;">No previous chats yet</p>';
+}
+
+// Initialize
+window.onload = () => {
+    loadChatHistory();
+    promptInput.focus();
+};
