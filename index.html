@@ -33,9 +33,9 @@
                 <h1>👻 Hello, I'm Ghost AI</h1>
                 <p>Powered by Groq · Free · Fast</p>
                 <div class="suggestions">
-                    <div class="suggestion" onclick="quickAsk('Write a Python hello world')">🐍 Write Python code</div>
-                    <div class="suggestion" onclick="quickAsk('Explain quantum computing')">🔮 Explain concepts</div>
-                    <div class="suggestion" onclick="quickAsk('Tell me a joke')">😄 Tell a joke</div>
+                    <button class="suggestion" onclick="quickAsk('Write a Python hello world')">🐍 Write Python code</button>
+                    <button class="suggestion" onclick="quickAsk('Explain quantum computing simply')">🔮 Explain concepts</button>
+                    <button class="suggestion" onclick="quickAsk('Tell me a joke')">😄 Tell a joke</button>
                 </div>
             </div>
         </div>
@@ -43,7 +43,7 @@
         <div class="input-container">
             <div class="input-box">
                 <textarea id="promptInput" rows="1" placeholder="Message Ghost AI..."></textarea>
-                <button onclick="sendMessage()" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+                <button onclick="sendMessage()" id="sendBtn" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
             </div>
             <div class="input-info">Ghost AI can make mistakes. Verify important info.</div>
         </div>
@@ -53,14 +53,17 @@
     <div class="modal" id="settingsModal">
         <div class="modal-content">
             <h3>⚙️ Settings</h3>
-            <label>Model</label>
+            
+            <label for="modelSelect">AI Model</label>
             <select id="modelSelect">
-                <option value="smart">🧠 Llama 3.3 70B (Smart)</option>
+                <option value="smart" selected>🧠 Llama 3.3 70B (Smart)</option>
                 <option value="fast">⚡ Llama 3.1 8B (Fast)</option>
                 <option value="mixtral">🔮 Mixtral 8x7B</option>
             </select>
-            <label>Temperature</label>
-            <input type="range" id="tempRange" min="0" max="100" value="80">
+            
+            <label for="tempRange">Temperature: <span id="tempValue">0.8</span></label>
+            <input type="range" id="tempRange" min="0" max="100" value="80" oninput="document.getElementById('tempValue').textContent = (this.value/100).toFixed(1)">
+            
             <div class="modal-buttons">
                 <button onclick="closeModal()">Cancel</button>
                 <button class="save-btn" onclick="saveSettings()">Save</button>
