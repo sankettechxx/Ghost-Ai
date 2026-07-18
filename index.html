@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👻 Ghost AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>👻 Ghost AI</h1>
+        <p class="subtitle">Powered by Groq (Llama 3.3 70B)</p>
+        
+        <div class="chat-box" id="chatBox">
+            <div class="message bot">Hello! How can I help you today?</div>
+        </div>
+        
+        <div class="input-area">
+            <input type="text" id="promptInput" placeholder="Type your message..." autofocus>
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        
+        <div id="loading" class="loading" style="display:none;">Thinking...</div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
