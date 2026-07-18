@@ -4,25 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>👻 Ghost AI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>👻 Ghost AI</h1>
-        <p class="subtitle">Powered by Groq (Llama 3.3 70B)</p>
-        
-        <div class="chat-box" id="chatBox">
-            <div class="message bot">Hello! How can I help you today?</div>
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>👻 Ghost AI</h3>
+            <button class="new-chat-btn" onclick="newChat()"><i class="fas fa-plus"></i> New Chat</button>
         </div>
-        
-        <div class="input-area">
-            <input type="text" id="promptInput" placeholder="Type your message..." autofocus>
-            <button onclick="sendMessage()">Send</button>
+        <div class="chat-history" id="chatHistory"></div>
+        <div class="sidebar-footer">
+            <button onclick="toggleSettings()"><i class="fas fa-cog"></i> Settings</button>
         </div>
-        
-        <div id="loading" class="loading" style="display:none;">Thinking...</div>
     </div>
-    
+
+    <!-- MAIN CHAT -->
+    <div class="main">
+        <div class="topbar">
+            <button class="menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            <span class="model-badge" id="modelBadge">🧠 Llama 3.3 70B</span>
+        </div>
+
+        <div class="chat-container" id="chatBox">
+            <div class="welcome">
+                <h1>👻 Hello, I'm Ghost AI</h1>
+                <p>Powered by Groq · Free · Fast</p>
+                <div class="suggestions">
+                    <div class="suggestion" onclick="quickAsk('Write a Python hello world')">🐍 Write Python code</div>
+                    <div class="suggestion" onclick="quickAsk('Explain quantum computing')">🔮 Explain concepts</div>
+                    <div class="suggestion" onclick="quickAsk('Tell me a joke')">😄 Tell a joke</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="input-box">
+                <textarea id="promptInput" rows="1" placeholder="Message Ghost AI..."></textarea>
+                <button onclick="sendMessage()" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+            <div class="input-info">Ghost AI can make mistakes. Verify important info.</div>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h3>⚙️ Settings</h3>
+            <label>Model</label>
+            <select id="modelSelect">
+                <option value="smart">🧠 Llama 3.3 70B (Smart)</option>
+                <option value="fast">⚡ Llama 3.1 8B (Fast)</option>
+                <option value="mixtral">🔮 Mixtral 8x7B</option>
+            </select>
+            <label>Temperature</label>
+            <input type="range" id="tempRange" min="0" max="100" value="80">
+            <div class="modal-buttons">
+                <button onclick="closeModal()">Cancel</button>
+                <button class="save-btn" onclick="saveSettings()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
